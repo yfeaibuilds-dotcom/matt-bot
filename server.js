@@ -38,39 +38,32 @@ const SYSTEM_PROMPT = fs.readFileSync(
 //   { reply: string }
 
 app.post('/chat', async (req, res) => {
+  const { message, history = [] } = req.body;
+
+  if (!message || typeof message !== 'string' || message.trim() === '') {
+    return res.status(400).json({ error: 'Message is required.' });
+  }
+
+  // Build the messages array from history + new user message
+  const messages = [
+    ...history.map(({ role, content }) => ({ role, content })),
+    { role: 'user', content: message.trim() }
+  ];
+
   try {
-
-    const message = req.body.message;
-
-    if (!message) {
-      return res.status(400).json({
-        error: 'Message required'
-      });
-    }
-
     const response = await client.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1024,
       system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: 'user',
-          content: message
-        }
-      ]
+      messages
     });
 
     const reply = response.content[0].text;
-
     res.json({ reply });
 
   } catch (err) {
-
-    console.error(err);
-
-    res.status(500).json({
-      error: err.message
-    });
+    console.error('Anthropic API error:', err.message);
+    res.status(500).json({ error: 'Something went wrong. Please try again.' });
   }
 });
 
