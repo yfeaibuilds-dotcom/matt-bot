@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matt Bot — The 8-Week Cycle</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #0a0a0a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 16px;
+  }
+
+  /* ── Chat container ── */
+  .chat-container {
+    width: 100%;
+    max-width: 680px;
+    display: flex;
+    flex-direction: column;
+    height: 90vh;
+    max-height: 780px;
+    background: #111;
+    border: 1px solid #222;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  .chat-header {
+    background: #111;
+    border-bottom: 2px solid #4472C4;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .logo-mark {
+    width: 32px;
+    height: 26px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .logo-m {
+    font-weight: 900;
+    font-size: 16px;
+    font-style: italic;
+    color: #111;
+    line-height: 1;
+  }
+
+  .header-text { flex: 1; }
+
+  .header-title {
+    font-size: 15px;
+    font-weight: bold;
+    color: white;
+    letter-spacing: 0.3px;
+  }
+
+  .header-sub {
+    font-size: 11px;
+    color: #888;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    background: #4472C4;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── Messages area ── */
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scroll-behavior: smooth;
+  }
+
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-track { background: transparent; }
+  .messages::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+  /* ── Message bubbles ── */
+  .message {
+    display: flex;
+    gap: 10px;
+    max-width: 92%;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .message.user {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+  }
+
+  .message.assistant {
+    align-self: flex-start;
+  }
+
+  .avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    margin-top: 2px;
+  }
+
+  .avatar.matt {
+    background: #4472C4;
+    color: white;
+    font-style: italic;
+  }
+
+  .avatar.user-av {
+    background: #333;
+    color: #aaa;
+  }
+
+  .bubble {
+    padding: 11px 15px;
+    border-radius: 3px;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .message.assistant .bubble {
+    background: #1a1a1a;
+    color: #e8e8e8;
+    border-left: 3px solid #4472C4;
+  }
+
+  .message.user .bubble {
+    background: #4472C4;
+    color: white;
+  }
+
+  /* ── Typing indicator ── */
+  .typing {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    align-self: flex-start;
+  }
+
+  .typing-dots {
+    display: flex;
+    gap: 4px;
+    padding: 12px 15px;
+    background: #1a1a1a;
+    border-left: 3px solid #4472C4;
+  }
+
+  .typing-dots span {
+    width: 6px;
+    height: 6px;
+    background: #4472C4;
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  /* ── Input area ── */
+  .input-area {
+    border-top: 1px solid #222;
+    padding: 14px 16px;
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+    background: #111;
+  }
+
+  .input-field {
+    flex: 1;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    color: #e8e8e8;
+    padding: 11px 14px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    line-height: 1.4;
+    border-radius: 3px;
+    transition: border-color 0.15s;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+
+  .input-field::placeholder { color: #555; }
+  .input-field:focus { border-color: #4472C4; }
+
+  .send-btn {
+    background: #4472C4;
+    border: none;
+    color: white;
+    width: 42px;
+    height: 42px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 3px;
+    transition: background 0.15s;
+    align-self: flex-end;
+  }
+
+  .send-btn:hover { background: #2f5496; }
+  .send-btn:disabled { background: #2a2a2a; cursor: not-allowed; }
+
+  .send-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+  /* ── Footer ── */
+  .chat-footer {
+    padding: 8px 16px;
+    text-align: center;
+    font-size: 10px;
+    color: #444;
+    letter-spacing: 0.5px;
+    background: #111;
+    border-top: 1px solid #1a1a1a;
+    flex-shrink: 0;
+  }
+
+  /* ── Embed note (remove this when embedding) ── */
+  .embed-note {
+    margin-top: 12px;
+    font-size: 11px;
+    color: #555;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="chat-container">
+
+  <!-- Header -->
+  <div class="chat-header">
+    <div class="logo-mark"><span class="logo-m">M</span></div>
+    <div class="header-text">
+      <div class="header-title">Matt Bot</div>
+      <div class="header-sub">The Troublemakers &mdash; Business Breakout</div>
+    </div>
+    <div class="status-dot"></div>
+  </div>
+
+  <!-- Messages -->
+  <div class="messages" id="messages"></div>
+
+  <!-- Input -->
+  <div class="input-area">
+    <textarea
+      id="input"
+      class="input-field"
+      placeholder="Type your message..."
+      rows="1"
+    ></textarea>
+    <button class="send-btn" id="send-btn" title="Send">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Footer -->
+  <div class="chat-footer">THE TROUBLEMAKERS &bull; BUSINESS BREAKOUT</div>
+
+</div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+// Point this to wherever your server.js is running.
+const API_URL = 'https://matt-bot-55je.onrender.com/chat';
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let history = [];
+let isWaiting = false;
+
+// ── DOM refs ──────────────────────────────────────────────────────────────────
+const messagesEl  = document.getElementById('messages');
+const inputEl     = document.getElementById('input');
+const sendBtn     = document.getElementById('send-btn');
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function scrollToBottom() {
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function addMessage(role, text) {
+  const wrapper = document.createElement('div');
+  wrapper.className = `message ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = `avatar ${role === 'assistant' ? 'matt' : 'user-av'}`;
+  avatar.textContent = role === 'assistant' ? 'M' : 'You';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = text;
+
+  wrapper.appendChild(avatar);
+  wrapper.appendChild(bubble);
+  messagesEl.appendChild(wrapper);
+  scrollToBottom();
+}
+
+function showTyping() {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'typing';
+  wrapper.id = 'typing-indicator';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar matt';
+  avatar.textContent = 'M';
+
+  const dots = document.createElement('div');
+  dots.className = 'typing-dots';
+  dots.innerHTML = '<span></span><span></span><span></span>';
+
+  wrapper.appendChild(avatar);
+  wrapper.appendChild(dots);
+  messagesEl.appendChild(wrapper);
+  scrollToBottom();
+}
+
+function removeTyping() {
+  const indicator = document.getElementById('typing-indicator');
+  if (indicator) indicator.remove();
+}
+
+function setWaiting(state) {
+  isWaiting = state;
+  sendBtn.disabled = state;
+  inputEl.disabled = state;
+}
+
+// ── Send message ──────────────────────────────────────────────────────────────
+async function sendMessage() {
+  const text = inputEl.value.trim();
+  if (!text || isWaiting) return;
+
+  inputEl.value = '';
+  inputEl.style.height = 'auto';
+  addMessage('user', text);
+  setWaiting(true);
+  showTyping();
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, history })
+    });
+
+    const data = await res.json();
+    removeTyping();
+
+    if (data.reply) {
+      addMessage('assistant', data.reply);
+      history.push({ role: 'user', content: text });
+      history.push({ role: 'assistant', content: data.reply });
+    } else {
+      addMessage('assistant', 'Something went wrong. Try again.');
+    }
+
+  } catch (err) {
+    removeTyping();
+    addMessage('assistant', 'Could not connect. Please check your connection and try again.');
+  }
+
+  setWaiting(false);
+}
+
+// ── Auto-resize textarea ──────────────────────────────────────────────────────
+inputEl.addEventListener('input', () => {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+});
+
+// ── Enter to send (Shift+Enter for new line) ──────────────────────────────────
+inputEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+sendBtn.addEventListener('click', sendMessage);
+
+// ── Opening message ───────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  addMessage('assistant', "How you start is how you finish. Let's set up your 8-week cycle. What's the profit result you want by the end of the 8 weeks? Give me a number.");
+});
+</script>
+
+</body>
+</html>
