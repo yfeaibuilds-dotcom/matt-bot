@@ -26,10 +26,21 @@ const client = new Anthropic({
 
 // ── Load system prompt once at startup ───────────────────────────────────────
 
-const SYSTEM_PROMPT = fs.readFileSync(
+const SYSTEM_PROMPT_BASE = fs.readFileSync(
   path.join(__dirname, 'system-prompt.txt'),
   'utf-8'
 );
+
+// Inject today's date at request time so Claude always knows the real date
+function buildSystemPrompt() {
+  const today = new Date().toLocaleDateString('en-AU', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+  return `Today's date is ${today}.\n\n${SYSTEM_PROMPT_BASE}`;
+}
 
 // ── Chat endpoint ─────────────────────────────────────────────────────────────
 // Accepts:
@@ -54,7 +65,7 @@ app.post('/chat', async (req, res) => {
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 1024,
-      system: SYSTEM_PROMPT,
+      system: buildSystemPrompt(),
       messages
     });
 
